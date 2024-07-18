@@ -40,6 +40,8 @@ let temperatureThreshold = 25; // Set the initial temperature threshold
 let AUTO_FAN = false; // Set to true to enable automatic fan control
 let thePanelID = 0
 
+
+
 let custom_panel = `<Extensions>
   <Version>1.11</Version>
   <Panel>
@@ -91,21 +93,20 @@ let custom_panel = `<Extensions>
 `
 
 function sendCommand(message) {
-    let url = 'https://' + switchIP + '/putxml';
-    let headers = [
-        'Content-Type: text/xml',
-        `Authorization: Basic ${btoa(SWITCH_USERNAME + ':' + SWITCH_PASSWORD)}`
-    ];
+    console.log("Sending command to switch: " + message)
+    let auth = ""
+    if (SWITCH_USERNAME != "") auth = SWITCH_USERNAME + ':' + SWITCH_PASSWORD + '@'
+    let url = 'http://' + auth + switchIP + '/relay/0?turn=' + message;
+    // xapi.Command.HttpClient.Get({ AllowInsecureHTTPS: 'True', Url: url })
+    //   .then((response) => { if (response.StatusCode === "200") { console.log("Successfully sent command via get: " + url) } });
 
-    let payload = "<Command><Message><Send><Text>" + message + "</Text></Send></Message></Command>";
-    //xapi.Command.HttpClient.Post({ AllowInsecureHTTPS: 'True', Header: headers, Url: url }, payload)
-    //    .then((response) => { if (response.StatusCode === "200") { console.log("Successfully sent: " + payload) } });
+
 }
 
 async function checkTemp() {
     if (AUTO_FAN && thePanelID != 0) {
         const temp = await xapi.Status.Peripherals.ConnectedDevice[thePanelID].RoomAnalytics.AmbientTemperature.get()
-        console.log(temp)
+        console.log(`Current temp in room: ${temp} and threshold is set to ${temperatureThreshold}`)
         if (parseInt(temp) > temperatureThreshold) {
             sendCommand('on')
         }
