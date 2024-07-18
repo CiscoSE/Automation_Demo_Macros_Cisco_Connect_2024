@@ -33,7 +33,7 @@ or implied.
 import xapi from 'xapi';
 
 const switchIP = '10.0.1.100'; // Set the IP address of the smart switch
-const SWITCH_USERNAME = 'admin'; // Set the username for the smart switch
+const SWITCH_USERNAME = 'admin'; // Set the username for the smart switch, leave blank if not needed
 const SWITCH_PASSWORD = 'password'; // Set the password for the smart switch
 
 let temperatureThreshold = 25; // Set the initial temperature threshold
@@ -97,8 +97,8 @@ function sendCommand(message) {
     let auth = ""
     if (SWITCH_USERNAME != "") auth = SWITCH_USERNAME + ':' + SWITCH_PASSWORD + '@'
     let url = 'http://' + auth + switchIP + '/relay/0?turn=' + message;
-    // xapi.Command.HttpClient.Get({ AllowInsecureHTTPS: 'True', Url: url })
-    //   .then((response) => { if (response.StatusCode === "200") { console.log("Successfully sent command via get: " + url) } });
+    xapi.Command.HttpClient.Get({ AllowInsecureHTTPS: 'True', Url: url })
+        .then((response) => { if (response.StatusCode === "200") { console.log("Successfully sent command via get: " + url) } });
 
 
 }

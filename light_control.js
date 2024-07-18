@@ -16,10 +16,9 @@ or implied.
  *                          Solutions Engineer
  *                          Cisco Systems
  *
- * This macro controls a smart switch attached to a fan in the room where the Webex Room Device is located.
- * It lets the user set a temperature threshold and the fan will turn on when the room temperature is above the threshold.
- * It also allows for manual turnin on and off of the fan without using the temperature threshold.
- * It communicates with the smart switch using the HTTP interface provided by the vendor: https://www.shelly.com/documents/developers/ddd_communication.pdf
+ * This macro controls a smart light bulbs in the room where the Webex Room Device is located.
+ * It provides a custom panel with controls for turning on and off the lights, setting the brightness, and setting the color.
+ * It communicates with the light bulbs using the HTTP interface provided by the vendor: https://www.shelly.com/documents/developers/ddd_communication.pdf
  * 
  * 
  * 
@@ -33,7 +32,7 @@ or implied.
 import xapi from 'xapi';
 
 const ligthIPs = ['10.0.1.111', '10.0.1.112', '10.0.1.113', '10.0.1.114']; // Set the IP address of the lights
-const LIGHT_USERNAME = 'admin'; // Set the username for the smart switch
+const LIGHT_USERNAME = 'admin'; // Set the username for the smart switch, leave blank if not needed
 const LIGHT_PASSWORD = 'password'; // Set the password for the smart switch
 
 let nIntervId;
@@ -186,8 +185,8 @@ async function randomizeLights() {
   console.log("setting each bulb to a different color an intensity...");
   for (let i = 0; i < ligthIPs.length; i++) {
     let url = 'http://' + get_auth + ligthIPs[i] + '/color/0?turn=on&red=' + Math.floor(Math.random() * 255) + '&green=' + Math.floor(Math.random() * 255) + '&blue=' + Math.floor(Math.random() * 255) + '&white=' + Math.floor(Math.random() * 255);
-    // xapi.Command.HttpClient.Get({ AllowInsecureHTTPS: 'True', Url: url })
-    //   .then((response) => { if (response.StatusCode === "200") { console.log("Successfully sent command via get: " + url) } });
+    xapi.Command.HttpClient.Get({ AllowInsecureHTTPS: 'True', Url: url })
+      .then((response) => { if (response.StatusCode === "200") { console.log("Successfully sent command via get: " + url) } });
   }
 }
 
@@ -195,8 +194,8 @@ function lightSwitch(on_off_setting) {
   console.log("Turning all lights " + on_off_setting + "...");
   for (let i = 0; i < ligthIPs.length; i++) {
     let url = 'http://' + get_auth + ligthIPs[i] + '/color/0?turn=' + on_off_setting;
-    // xapi.Command.HttpClient.Get({ AllowInsecureHTTPS: 'True', Url: url })
-    //   .then((response) => { if (response.StatusCode === "200") { console.log("Successfully sent command via get: " + url) } });
+    xapi.Command.HttpClient.Get({ AllowInsecureHTTPS: 'True', Url: url })
+      .then((response) => { if (response.StatusCode === "200") { console.log("Successfully sent command via get: " + url) } });
   }
 
 }
@@ -205,8 +204,8 @@ function setBrightness(brightness) {
   console.log("Setting all lights to brightness " + brightness + "...");
   for (let i = 0; i < ligthIPs.length; i++) {
     let url = 'http://' + get_auth + ligthIPs[i] + '/color/0?brightness=' + brightness;
-    // xapi.Command.HttpClient.Get({ AllowInsecureHTTPS: 'True', Url: url })
-    //   .then((response) => { if (response.StatusCode === "200") { console.log("Successfully sent command via get: " + url) } });
+    xapi.Command.HttpClient.Get({ AllowInsecureHTTPS: 'True', Url: url })
+      .then((response) => { if (response.StatusCode === "200") { console.log("Successfully sent command via get: " + url) } });
   }
 }
 
@@ -214,9 +213,8 @@ function setColor(red, green, blue, white) {
   console.log("Setting all lights to color " + red + ", " + green + ", " + blue + ", " + white + "...");
   for (let i = 0; i < ligthIPs.length; i++) {
     let url = 'http://' + get_auth + ligthIPs[i] + '/color/0?red=' + red + '&green=' + green + '&blue=' + blue + '&white=' + white;
-
-    // xapi.Command.HttpClient.Get({ AllowInsecureHTTPS: 'True', Url: url })
-    //   .then((response) => { if (response.StatusCode === "200") { console.log("Successfully sent command via get: " + url) } });
+    xapi.Command.HttpClient.Get({ AllowInsecureHTTPS: 'True', Url: url })
+      .then((response) => { if (response.StatusCode === "200") { console.log("Successfully sent command via get: " + url) } });
   }
 }
 
