@@ -36,10 +36,13 @@ const switchIP = '10.0.1.100'; // Set the IP address of the smart switch
 const SWITCH_USERNAME = 'admin'; // Set the username for the smart switch, leave blank if not needed
 const SWITCH_PASSWORD = 'password'; // Set the password for the smart switch
 
+let showAutoTempInDisplay = false; // Controls showing the temperature threshold and auto activities in main display 
+
 let temperatureThreshold = 25; // Set the initial temperature threshold
 let AUTO_FAN = false; // Set to true to enable automatic fan control
 let thePanelID = 0
-
+let currentTemp = 0
+let currentAutoFanStatus = 'off'
 
 
 let custom_panel = `<Extensions>
@@ -47,6 +50,7 @@ let custom_panel = `<Extensions>
   <Panel>
     <Order>2</Order>
     <PanelId>panel_fan_control</PanelId>
+    <Origin>local</Origin>
     <Location>HomeScreen</Location>
     <Icon>Hvac</Icon>
     <Name>Fan Control</Name>
@@ -62,22 +66,21 @@ let custom_panel = `<Extensions>
           <ValueSpace>
             <Value>
               <Key>1</Key>
-              <Name>On</Name>
+              <Name>Turn On</Name>
             </Value>
             <Value>
               <Key>2</Key>
-              <Name>Off</Name>
+              <Name>Turn Off</Name>
             </Value>
           </ValueSpace>
         </Widget>
       </Row>
       <Row>
-        <Name>Auto Temp</Name>
+        <Name>Auto Temp Control</Name>
         <Widget>
           <WidgetId>widget_activate_auto</WidgetId>
-          <Name>Activate</Name>
-          <Type>Button</Type>
-          <Options>size=2</Options>
+          <Type>ToggleButton</Type>
+          <Options>size=1</Options>
         </Widget>
         <Widget>
           <WidgetId>widget_temp_select</WidgetId>
@@ -85,114 +88,171 @@ let custom_panel = `<Extensions>
           <Options>size=2;style=plusminus</Options>
         </Widget>
       </Row>
+      <Row>
+        <Name>Show Auto Temp Status</Name>
+        <Widget>
+          <WidgetId>widget_toggle_display_on_off</WidgetId>
+          <Type>ToggleButton</Type>
+          <Options>size=1</Options>
+        </Widget>
+        <Widget>
+          <WidgetId>widget_35</WidgetId>
+          <Name>Shown on main display when active</Name>
+          <Type>Text</Type>
+          <Options>size=3;fontSize=normal;align=center</Options>
+        </Widget>
+      </Row>
       <Options/>
     </Page>
   </Panel>
 </Extensions>
-
 `
 
-function sendCommand(message) {
-    console.log("Sending command to switch: " + message)
-    let auth = ""
-    if (SWITCH_USERNAME != "") auth = SWITCH_USERNAME + ':' + SWITCH_PASSWORD + '@'
-    let url = 'http://' + auth + switchIP + '/relay/0?turn=' + message;
-    xapi.Command.HttpClient.Get({ AllowInsecureHTTPS: 'True', Url: url })
-        .then((response) => { if (response.StatusCode === "200") { console.log("Successfully sent command via get: " + url) } });
+async function displayTempReadings(status) {
+  let message = ''
+  if (status == 'on') {
+    message = `Fan turned on since temperature is ${currentTemp} and threshold is ${temperatureThreshold}`
+  }
+  if (status == 'off') {
+    message = `Fan turned off since temperature is ${currentTemp} and threshold is ${temperatureThreshold}`
+  }
+  if (status == '') {
+    message = `Temperature is ${currentTemp} , threshold set to ${temperatureThreshold} and Fan is ${AUTO_FAN ? 'auto' : 'manual'}`
+  }
+  await xapi.Command.UserInterface.Message.Textline.Display({ Text: message, Duration: 10, X: 1, Y: 1 });
+
+}
+
+
+async function sendCommand(message) {
+  console.log("Sending command to switch: " + message)
+  let auth = ""
+  if (SWITCH_USERNAME != "") auth = SWITCH_USERNAME + ':' + SWITCH_PASSWORD + '@'
+  let url = 'http://' + auth + switchIP + '/relay/0?turn=' + message;
+  await xapi.Command.HttpClient.Get({ AllowInsecureHTTPS: 'True', Url: url })
+    .then((response) => { if (response.StatusCode === "200") { console.log("Successfully sent command via get: " + url) } });
 
 
 }
 
 async function checkTemp() {
-    if (AUTO_FAN && thePanelID != 0) {
-        const temp = await xapi.Status.Peripherals.ConnectedDevice[thePanelID].RoomAnalytics.AmbientTemperature.get()
-        console.log(`Current temp in room: ${temp} and threshold is set to ${temperatureThreshold}`)
-        if (parseInt(temp) > temperatureThreshold) {
-            sendCommand('on')
-        }
-        else {
-            sendCommand('off')
-        }
+  if (AUTO_FAN && thePanelID != 0) {
+    currentTemp = await xapi.Status.Peripherals.ConnectedDevice[thePanelID].RoomAnalytics.AmbientTemperature.get()
+    console.log(`Current temp in room: ${currentTemp} and threshold is set to ${temperatureThreshold}`)
+    if (parseInt(currentTemp) > temperatureThreshold) {
+      await sendCommand('on')
+      if (showAutoTempInDisplay && currentAutoFanStatus != 'on') displayTempReadings('on');
+      currentAutoFanStatus = 'on'
     }
+    else {
+      await sendCommand('off')
+      if (showAutoTempInDisplay && currentAutoFanStatus != 'off') displayTempReadings('off');
+      currentAutoFanStatus = 'off'
+    }
+  }
 }
 
 async function handleWidgetActions(event) {
-    let widgetId = event.WidgetId;
+  let widgetId = event.WidgetId;
 
-    switch (widgetId) {
-        case 'widget_manual_toggle':
-            if (event.Type == 'released') switch (event.Value) {
-                case '1':
-                    console.log('On');
-                    console.log("Turning on Fan...");
-                    sendCommand('on')
-                    AUTO_FAN = false
-                    xapi.Command.UserInterface.Extensions.Widget.UnsetValue({ WidgetId: 'widget_temp_select' });
-                    break;
+  switch (widgetId) {
+    case 'widget_manual_toggle':
+      if (event.Type == 'released') switch (event.Value) {
+        case '1':
+          console.log('On');
+          console.log("Turning on Fan...");
+          await sendCommand('on')
+          AUTO_FAN = false
+          xapi.Command.UserInterface.Extensions.Widget.UnsetValue({ WidgetId: 'widget_temp_select' });
+          await xapi.Command.UserInterface.Extensions.Widget.SetValue({ Value: 'off', WidgetId: 'widget_activate_auto' });
+          break;
 
-                case '2':
-                    console.log('Off');
-                    console.log("Turning off Fan...");
-                    sendCommand('off')
-                    AUTO_FAN = false
-                    xapi.Command.UserInterface.Extensions.Widget.UnsetValue({ WidgetId: 'widget_temp_select' });
-                    break;
-            }
-            break;
-        case 'widget_activate_auto':
-            if (event.Type == 'released') {
-                if (thePanelID != 0) {
-                    console.log('auto');
-                    await xapi.Command.UserInterface.Extensions.Widget.SetValue({ Value: temperatureThreshold.toString(), WidgetId: 'widget_temp_select' });
-                    AUTO_FAN = true
-                    checkTemp()
-                }
-                else {
-                    console.log('Could not set to auto since no Navigator is detected to get temperature...')
-                }
-            }
-            break;
-        case 'widget_temp_select':
-            if (event.Type == "pressed") {
-                if (thePanelID != 0) {
-                    if (event.Value == 'increment') temperatureThreshold++
-                    if (event.Value == 'decrement') temperatureThreshold--
-                    console.log("Temperature threshold set to: " + temperatureThreshold);
-                    await xapi.Command.UserInterface.Extensions.Widget.SetValue({ Value: temperatureThreshold.toString(), WidgetId: 'widget_temp_select' });
-                }
-                else {
-                    console.log('Cannot set the temperature threshold since no Navigator is detected to get temperature')
-                }
-            }
-
-            break;
-    }
+        case '2':
+          console.log('Off');
+          console.log("Turning off Fan...");
+          await sendCommand('off')
+          AUTO_FAN = false
+          xapi.Command.UserInterface.Extensions.Widget.UnsetValue({ WidgetId: 'widget_temp_select' });
+          await xapi.Command.UserInterface.Extensions.Widget.SetValue({ Value: 'off', WidgetId: 'widget_activate_auto' });
+          break;
+      }
+      break;
+    case 'widget_activate_auto':
+      if (event.Type == 'changed') {
+        if (thePanelID != 0) {
+          if (event.Value == 'on') {
+            console.log('auto');
+            await xapi.Command.UserInterface.Extensions.Widget.SetValue({ Value: temperatureThreshold.toString(), WidgetId: 'widget_temp_select' });
+            AUTO_FAN = true
+            checkTemp()
+          } else {
+            console.log('manual');
+            await xapi.Command.UserInterface.Extensions.Widget.UnsetValue({ WidgetId: 'widget_temp_select' });
+            AUTO_FAN = false
+          }
+          if (showAutoTempInDisplay) displayTempReadings('');
+        }
+        else {
+          console.log('Could not change auto since no Navigator is detected to get temperature...')
+          await xapi.Command.UserInterface.Extensions.Widget.SetValue({ Value: 'off', WidgetId: 'widget_activate_auto' });
+        }
+      }
+      break;
+    case 'widget_temp_select':
+      if (event.Type == "pressed") {
+        if (thePanelID != 0) {
+          if (event.Value == 'increment') temperatureThreshold++
+          if (event.Value == 'decrement') temperatureThreshold--
+          console.log("Temperature threshold set to: " + temperatureThreshold);
+          await xapi.Command.UserInterface.Extensions.Widget.SetValue({ Value: temperatureThreshold.toString(), WidgetId: 'widget_temp_select' });
+        }
+        else {
+          console.log('Cannot set the temperature threshold since no Navigator is detected to get temperature')
+        }
+      }
+      break;
+    case 'widget_toggle_display_on_off':
+      if (event.Type == 'changed') {
+        if (event.Value == 'on') {
+          console.log("Start showing temp change events on main display...");
+          showAutoTempInDisplay = true;
+        } else {
+          console.log("Stop showing temp change events on main display...");
+          showAutoTempInDisplay = false;
+        }
+        displayTempReadings('');
+      }
+      break
+  }
 }
 
 async function main() {
 
-    // Get the ID of the room navigator
-    const peripherals = await xapi.Status.Peripherals.ConnectedDevice.get()
-    peripherals.forEach(peripheral => {
-        if (peripheral.Name == "Cisco Room Navigator") {
-            thePanelID = parseInt(peripheral.id);
-        }
-    })
-    console.log(`Navigator panel id: ${thePanelID}`)
+  // Get the ID of the room navigator
+  const peripherals = await xapi.Status.Peripherals.ConnectedDevice.get()
+  peripherals.forEach(peripheral => {
+    if (peripheral.Name == "Cisco Room Navigator") {
+      thePanelID = parseInt(peripheral.id);
+    }
+  })
+  console.log(`Navigator panel id: ${thePanelID}`)
+  if (thePanelID != 0) {
+    currentTemp = await xapi.Status.Peripherals.ConnectedDevice[thePanelID].RoomAnalytics.AmbientTemperature.get()
+  }
 
-    // Enable the HTTP Client
-    xapi.Config.HttpClient.Mode.set('On');
-    xapi.Config.HttpClient.AllowInsecureHTTPS.set('True');
+  // Enable the HTTP Client
+  xapi.Config.HttpClient.Mode.set('On');
+  xapi.Config.HttpClient.AllowInsecureHTTPS.set('True');
 
-    // call checkTemp every minute
-    setInterval(checkTemp, 60000);
+  // call checkTemp every minute
+  setInterval(checkTemp, 60000);
 
-    // create the custom panel
-    xapi.Command.UserInterface.Extensions.Panel.Save({ PanelId: 'panel_fan_control' }, custom_panel);
+  // create the custom panel
+  xapi.Command.UserInterface.Extensions.Panel.Save({ PanelId: 'panel_fan_control' }, custom_panel);
 
 
-    // register the custom panel events
-    xapi.Event.UserInterface.Extensions.Widget.Action.on(event => handleWidgetActions(event));
+  // register the custom panel events
+  xapi.Event.UserInterface.Extensions.Widget.Action.on(event => handleWidgetActions(event));
 
 }
 

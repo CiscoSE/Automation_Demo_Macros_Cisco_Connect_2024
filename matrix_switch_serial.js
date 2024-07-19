@@ -107,19 +107,19 @@ async function handleWidgetActions(event) {
     if (event.Type == 'released') switch (event.Value) {
       case '1':
         console.log('Switching to HDMI 1');
-        sendSerial('1All')
+        sendSerial('1All.')
         break;
       case '2':
         console.log('Switching to HDMI 2');
-        sendSerial('2All')
+        sendSerial('2All.')
         break;
       case '3':
         console.log('Switching to HDMI 3');
-        sendSerial('3All')
+        sendSerial('3All.')
         break;
       case '4':
         console.log('Switching to HDMI 4');
-        sendSerial('4All')
+        sendSerial('4All.')
         break
     }
   }

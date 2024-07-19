@@ -179,42 +179,43 @@ let custom_panel = `<Extensions>
 </Extensions>
 `
 
+async function sendHTTPGet(url) {
+  await xapi.Command.HttpClient.Get({ AllowInsecureHTTPS: 'True', Url: url })
+    .then((response) => { if (response.StatusCode === "200") { console.log("Successfully sent command via get: " + url) } });
+}
+
 
 // randomizeLights function sets each light to a random color and intensity
 async function randomizeLights() {
   console.log("setting each bulb to a different color an intensity...");
   for (let i = 0; i < ligthIPs.length; i++) {
     let url = 'http://' + get_auth + ligthIPs[i] + '/color/0?turn=on&red=' + Math.floor(Math.random() * 255) + '&green=' + Math.floor(Math.random() * 255) + '&blue=' + Math.floor(Math.random() * 255) + '&white=' + Math.floor(Math.random() * 255);
-    xapi.Command.HttpClient.Get({ AllowInsecureHTTPS: 'True', Url: url })
-      .then((response) => { if (response.StatusCode === "200") { console.log("Successfully sent command via get: " + url) } });
+    await sendHTTPGet(url)
   }
 }
 
-function lightSwitch(on_off_setting) {
+async function lightSwitch(on_off_setting) {
   console.log("Turning all lights " + on_off_setting + "...");
   for (let i = 0; i < ligthIPs.length; i++) {
     let url = 'http://' + get_auth + ligthIPs[i] + '/color/0?turn=' + on_off_setting;
-    xapi.Command.HttpClient.Get({ AllowInsecureHTTPS: 'True', Url: url })
-      .then((response) => { if (response.StatusCode === "200") { console.log("Successfully sent command via get: " + url) } });
+    await sendHTTPGet(url)
   }
 
 }
 
-function setBrightness(brightness) {
+async function setBrightness(brightness) {
   console.log("Setting all lights to brightness " + brightness + "...");
   for (let i = 0; i < ligthIPs.length; i++) {
     let url = 'http://' + get_auth + ligthIPs[i] + '/color/0?brightness=' + brightness;
-    xapi.Command.HttpClient.Get({ AllowInsecureHTTPS: 'True', Url: url })
-      .then((response) => { if (response.StatusCode === "200") { console.log("Successfully sent command via get: " + url) } });
+    await sendHTTPGet(url)
   }
 }
 
-function setColor(red, green, blue, white) {
+async function setColor(red, green, blue, white) {
   console.log("Setting all lights to color " + red + ", " + green + ", " + blue + ", " + white + "...");
   for (let i = 0; i < ligthIPs.length; i++) {
     let url = 'http://' + get_auth + ligthIPs[i] + '/color/0?red=' + red + '&green=' + green + '&blue=' + blue + '&white=' + white;
-    xapi.Command.HttpClient.Get({ AllowInsecureHTTPS: 'True', Url: url })
-      .then((response) => { if (response.StatusCode === "200") { console.log("Successfully sent command via get: " + url) } });
+    await sendHTTPGet(url)
   }
 }
 

@@ -72,6 +72,10 @@ More details on how to install Macros for the [Board, Desk, and Room Series](htt
 
 # Screenshots
 
+![/IMAGES/icons.png](/IMAGES/icons.png)
+![/IMAGES/fan.png](/IMAGES/fan.png)
+![/IMAGES/lights.png](/IMAGES/lights.png)
+![/IMAGES/HDMI_Input.png](/IMAGES/HDMI_Input.png)
 ![/IMAGES/report-issue-gif.gif](/IMAGES/report-issue-gif.gif)
 
 ### LICENSE
