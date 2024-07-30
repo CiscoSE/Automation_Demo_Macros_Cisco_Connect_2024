@@ -45,6 +45,7 @@ let currentTemp = 0
 let currentAutoFanStatus = 'off'
 
 
+
 let custom_panel = `<Extensions>
   <Version>1.11</Version>
   <Panel>
@@ -143,11 +144,13 @@ async function checkTemp() {
       await sendCommand('on')
       if (showAutoTempInDisplay && currentAutoFanStatus != 'on') displayTempReadings('on');
       currentAutoFanStatus = 'on'
+      await xapi.Command.UserInterface.Extensions.Widget.SetValue({ Value: '1', WidgetId: 'widget_manual_toggle' });
     }
     else {
       await sendCommand('off')
       if (showAutoTempInDisplay && currentAutoFanStatus != 'off') displayTempReadings('off');
       currentAutoFanStatus = 'off'
+      await xapi.Command.UserInterface.Extensions.Widget.SetValue({ Value: '2', WidgetId: 'widget_manual_toggle' });
     }
   }
 }
@@ -205,6 +208,7 @@ async function handleWidgetActions(event) {
           if (event.Value == 'decrement') temperatureThreshold--
           console.log("Temperature threshold set to: " + temperatureThreshold);
           await xapi.Command.UserInterface.Extensions.Widget.SetValue({ Value: temperatureThreshold.toString(), WidgetId: 'widget_temp_select' });
+          checkTemp();
         }
         else {
           console.log('Cannot set the temperature threshold since no Navigator is detected to get temperature')
