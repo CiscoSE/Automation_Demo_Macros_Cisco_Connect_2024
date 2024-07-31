@@ -87,7 +87,9 @@ async function testSendText() {
   console.log("Starting send serial test")
   while (true) {
     console.log("Sending Hello there...")
-    await xapi.Command.SerialPort.PeripheralControl.Send({ PortId: serialOutboundPort, Text: "Hello there" });
+    let serial = await xapi.Command.SerialPort.PeripheralControl.Send({ PortId: 1, ResponseTerminator: '** end', ResponseTimeout: '5000', Text: 'Hello there\\n' });
+    console.log(serial)
+
     await delay(1000)
   }
 }
@@ -95,7 +97,8 @@ async function testSendText() {
 
 async function sendSerial(command) {
   console.log("Sending this command via serial: " + command)
-  await xapi.Command.SerialPort.PeripheralControl.Send({ PortId: serialOutboundPort, Text: command });
+  serial = await xapi.Command.SerialPort.PeripheralControl.Send({ PortId: serialOutboundPort, ResponseTerminator: '** end', ResponseTimeout: '5000', Text: command });
+  console.log(serial)
 }
 
 
