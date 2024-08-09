@@ -78,7 +78,11 @@ const custom_panel = `<Extensions>
   </Panel>
 </Extensions>`
 
-
+/**
+ * Function to delay execution for a number of milliseconds
+ * @param {integer} ms 
+ * @returns 
+ */
 function delay(ms) {
   return new Promise(resolve => setTimeout(resolve, ms))
 }
@@ -89,15 +93,17 @@ async function testSendText() {
     console.log("Sending Hello there...")
     let serial = await xapi.Command.SerialPort.PeripheralControl.Send({ PortId: 1, ResponseTerminator: '** end', ResponseTimeout: '5000', Text: 'Hello there\\n' });
     console.log(serial)
-
     await delay(1000)
   }
 }
 
-
+/**
+ * Function to send a command via serial port
+ * @param {string} command 
+ */
 async function sendSerial(command) {
   console.log("Sending this command via serial: " + command)
-  serial = await xapi.Command.SerialPort.PeripheralControl.Send({ PortId: serialOutboundPort, ResponseTerminator: '** end', ResponseTimeout: '5000', Text: command });
+  let serial = await xapi.Command.SerialPort.PeripheralControl.Send({ PortId: serialOutboundPort, ResponseTerminator: '** end', ResponseTimeout: '5000', Text: command });
   console.log(serial)
 }
 
@@ -110,19 +116,19 @@ async function handleWidgetActions(event) {
     if (event.Type == 'released') switch (event.Value) {
       case '1':
         console.log('Switching to HDMI 1');
-        sendSerial('1All.')
+        await sendSerial('1All.\\n')
         break;
       case '2':
         console.log('Switching to HDMI 2');
-        sendSerial('2All.')
+        await sendSerial('2All.\\n')
         break;
       case '3':
         console.log('Switching to HDMI 3');
-        sendSerial('3All.')
+        await sendSerial('3All.\\n')
         break;
       case '4':
         console.log('Switching to HDMI 4');
-        sendSerial('4All.')
+        await sendSerial('4All.\\n')
         break
     }
   }
