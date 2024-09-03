@@ -17,7 +17,7 @@ or implied.
  *                          Cisco Systems
  *
  * This macro controls a smart light bulbs in the room where the Webex Room Device is located.
- * It provides a custom panel with controls for turning on and off the lights, setting the brightness, and setting the color.
+ * It provides a custom panel with controls for turning on and off the lights and setting the color.
  * It communicates with the light bulbs using the HTTP interface provided by the vendor: https://www.shelly.com/documents/developers/ddd_communication.pdf
  * 
  * 
@@ -37,7 +37,6 @@ const LIGHT_PASSWORD = 'password'; // Set the password for the smart switch
 
 let nIntervId;
 
-let brightness = 100;
 let red = 255;
 let green = 255;
 let blue = 255;
@@ -75,20 +74,6 @@ let custom_panel = `<Extensions>
         <Widget>
           <WidgetId>widget_21</WidgetId>
           <Name>On</Name>
-          <Type>Text</Type>
-          <Options>size=1;fontSize=normal;align=center</Options>
-        </Widget>
-      </Row>
-      <Row>
-        <Name>Brightness</Name>
-        <Widget>
-          <WidgetId>widget_brightness</WidgetId>
-          <Type>Slider</Type>
-          <Options>size=3</Options>
-        </Widget>
-        <Widget>
-          <WidgetId>widget_text_bright_value</WidgetId>
-          <Name>0</Name>
           <Type>Text</Type>
           <Options>size=1;fontSize=normal;align=center</Options>
         </Widget>
@@ -179,6 +164,11 @@ let custom_panel = `<Extensions>
 </Extensions>
 `
 
+function delay(ms) {
+  return new Promise(resolve => setTimeout(resolve, ms));
+}
+
+
 async function sendHTTPGet(url) {
   await xapi.Command.HttpClient.Get({ AllowInsecureHTTPS: 'True', Url: url })
     .then((response) => { if (response.StatusCode === "200") { console.log("Successfully sent command via get: " + url) } });
@@ -189,8 +179,9 @@ async function sendHTTPGet(url) {
 async function randomizeLights() {
   console.log("setting each bulb to a different color an intensity...");
   for (let i = 0; i < ligthIPs.length; i++) {
-    let url = 'http://' + get_auth + ligthIPs[i] + '/color/0?turn=on&red=' + Math.floor(Math.random() * 255) + '&green=' + Math.floor(Math.random() * 255) + '&blue=' + Math.floor(Math.random() * 255) + '&white=' + Math.floor(Math.random() * 255);
+    let url = 'http://' + get_auth + ligthIPs[i] + '/color/0?turn=on&red=' + Math.floor(Math.random() * 255) + '&green=' + Math.floor(Math.random() * 255) + '&blue=' + Math.floor(Math.random() * 255) + '&white=0';
     await sendHTTPGet(url)
+    await delay(250);
   }
 }
 
@@ -203,11 +194,18 @@ async function lightSwitch(on_off_setting) {
 
 }
 
-async function setBrightness(brightness) {
-  console.log("Setting all lights to brightness " + brightness + "...");
+
+async function setAllColors() {
+  console.log("in setAllColors....");
+  await setColor(red, green, blue, white)
+}
+
+async function setAllColorMode() {
+  console.log("Setting all lights to color mode...");
   for (let i = 0; i < ligthIPs.length; i++) {
-    let url = 'http://' + get_auth + ligthIPs[i] + '/color/0?brightness=' + brightness;
+    let url = 'http://' + get_auth + ligthIPs[i] + '/color/0?mode=color';
     await sendHTTPGet(url)
+    await delay(200);
   }
 }
 
@@ -216,6 +214,7 @@ async function setColor(red, green, blue, white) {
   for (let i = 0; i < ligthIPs.length; i++) {
     let url = 'http://' + get_auth + ligthIPs[i] + '/color/0?red=' + red + '&green=' + green + '&blue=' + blue + '&white=' + white;
     await sendHTTPGet(url)
+    await delay(200)
   }
 }
 
@@ -227,20 +226,12 @@ async function handleWidgetActions(event) {
       if (event.Type == 'released') {
         console.log("Starting celebration!!")
         // set initial randomization of lights
-        randomizeLights()
+        await randomizeLights()
         // radomize lights every 500ms
-        nIntervId = setInterval(randomizeLights, 500);
+        nIntervId = setInterval(randomizeLights, 1000);
         // after 15 seconds, cancel the celebration! 
-        setTimeout(function () { clearInterval(nIntervId) }, 15000);
+        setTimeout(function () { clearInterval(nIntervId) }, 16000);
 
-      }
-      break;
-    case 'widget_brightness':
-      if (event.Type == "changed") {
-        let newBrightness = parseInt(event.Value * 100 / 255);
-        console.log("Brightness set to: " + newBrightness);
-        await xapi.Command.UserInterface.Extensions.Widget.SetValue({ Value: newBrightness.toString(), WidgetId: 'widget_text_bright_value' });
-        setBrightness(newBrightness);
       }
       break;
     case 'widget_red_slider':
@@ -248,7 +239,7 @@ async function handleWidgetActions(event) {
         red = parseInt(event.Value);
         console.log("Red set to: " + red);
         await xapi.Command.UserInterface.Extensions.Widget.SetValue({ Value: red.toString(), WidgetId: 'widget_red_value' });
-        setColor(red, green, blue, white);
+        //await setColor(red, green, blue, white);
       }
       break;
     case 'widget_green_slider':
@@ -256,7 +247,7 @@ async function handleWidgetActions(event) {
         green = parseInt(event.Value);
         console.log("Green set to: " + green);
         await xapi.Command.UserInterface.Extensions.Widget.SetValue({ Value: green.toString(), WidgetId: 'widget_green_value' });
-        setColor(red, green, blue, white);
+        //await setColor(red, green, blue, white);
       }
       break;
     case 'widget_blue_slider':
@@ -264,7 +255,7 @@ async function handleWidgetActions(event) {
         blue = parseInt(event.Value);
         console.log("Blue set to: " + blue);
         await xapi.Command.UserInterface.Extensions.Widget.SetValue({ Value: blue.toString(), WidgetId: 'widget_blue_value' });
-        setColor(red, green, blue, white);
+        //await setColor(red, green, blue, white);
       }
       break;
     case 'widget_white_slider':
@@ -272,17 +263,17 @@ async function handleWidgetActions(event) {
         white = parseInt(event.Value);
         console.log("White set to: " + white);
         await xapi.Command.UserInterface.Extensions.Widget.SetValue({ Value: white.toString(), WidgetId: 'widget_white_value' });
-        setColor(red, green, blue, white);
+        //await setColor(red, green, blue, white);
       }
       break;
     case 'widget_toggle_on_off':
       if (event.Type == 'changed') {
         if (event.Value == 'on') {
           console.log("Turning on lights...");
-          lightSwitch('on');
+          await lightSwitch('on');
         } else {
           console.log("Turning off lights...");
-          lightSwitch('off');
+          await lightSwitch('off');
         }
       }
       break
@@ -307,13 +298,15 @@ async function main() {
   await xapi.Command.UserInterface.Extensions.Widget.SetValue({ WidgetId: 'widget_blue_value', Value: blue.toString() });
   await xapi.Command.UserInterface.Extensions.Widget.SetValue({ WidgetId: 'widget_white_slider', Value: white });
   await xapi.Command.UserInterface.Extensions.Widget.SetValue({ WidgetId: 'widget_white_value', Value: white.toString() });
-  // for widget_text_bright_value we need to first convert the brightness to a range of 0-255 to match the slider
-  const brightness_0_255 = Math.round(brightness * 2.55);
-  await xapi.Command.UserInterface.Extensions.Widget.SetValue({ WidgetId: 'widget_brightness', Value: brightness_0_255 });
-  await xapi.Command.UserInterface.Extensions.Widget.SetValue({ WidgetId: 'widget_text_bright_value', Value: brightness.toString() });
 
   // register the custom panel events
   xapi.Event.UserInterface.Extensions.Widget.Action.on(event => handleWidgetActions(event));
+
+  await setAllColorMode();
+  await delay(1000);
+
+  // set light color every second
+  setInterval(setAllColors, 3000);
 
 }
 

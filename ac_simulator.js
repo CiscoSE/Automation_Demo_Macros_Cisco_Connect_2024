@@ -235,7 +235,7 @@ async function main() {
   // Get the ID of the room navigator
   const peripherals = await xapi.Status.Peripherals.ConnectedDevice.get()
   peripherals.forEach(peripheral => {
-    if (peripheral.Name == "Cisco Room Navigator") {
+    if (peripheral.Name == "Cisco Room Navigator" && peripheral.Location == "InsideRoom") {
       thePanelID = parseInt(peripheral.id);
     }
   })
