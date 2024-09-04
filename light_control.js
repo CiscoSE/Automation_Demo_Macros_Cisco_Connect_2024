@@ -34,6 +34,8 @@ import xapi from 'xapi';
 const ligthIPs = ['10.0.1.111', '10.0.1.112', '10.0.1.113', '10.0.1.114']; // Set the IP address of the lights
 const LIGHT_USERNAME = 'admin'; // Set the username for the smart switch, leave blank if not needed
 const LIGHT_PASSWORD = 'password'; // Set the password for the smart switch
+const CELEBRATING_URL = 'https://youtu.be/3GwjfUFyY6M?si=Kk5dSEaH4m7iLuNv'
+
 
 let nIntervId;
 
@@ -41,6 +43,7 @@ let red = 255;
 let green = 255;
 let blue = 255;
 let white = 255;
+let isCelebrating = false
 
 
 let get_auth = ""
@@ -171,13 +174,13 @@ function delay(ms) {
 
 async function sendHTTPGet(url) {
   await xapi.Command.HttpClient.Get({ AllowInsecureHTTPS: 'True', Url: url })
-    .then((response) => { if (response.StatusCode === "200") { console.log("Successfully sent command via get: " + url) } });
+    .then((response) => { if (response.StatusCode === "200") { console.debug("Successfully sent command via get: " + url) } });
 }
 
 
 // randomizeLights function sets each light to a random color and intensity
 async function randomizeLights() {
-  console.log("setting each bulb to a different color an intensity...");
+  console.debug("setting each bulb to a different color an intensity to celebrate...");
   for (let i = 0; i < ligthIPs.length; i++) {
     let url = 'http://' + get_auth + ligthIPs[i] + '/color/0?turn=on&red=' + Math.floor(Math.random() * 255) + '&green=' + Math.floor(Math.random() * 255) + '&blue=' + Math.floor(Math.random() * 255) + '&white=0';
     await sendHTTPGet(url)
@@ -197,7 +200,8 @@ async function lightSwitch(on_off_setting) {
 
 async function setAllColors() {
   console.log("in setAllColors....");
-  await setColor(red, green, blue, white)
+  if (!isCelebrating)
+    await setColor(red, green, blue, white);
 }
 
 async function setAllColorMode() {
@@ -225,12 +229,20 @@ async function handleWidgetActions(event) {
     case 'widget_button_celebrate':
       if (event.Type == 'released') {
         console.log("Starting celebration!!")
+        isCelebrating = true;
+        if (CELEBRATING_URL != "")
+          await xapi.Command.UserInterface.WebView.Display({ Url: CELEBRATING_URL });
         // set initial randomization of lights
         await randomizeLights()
-        // radomize lights every 500ms
+        // radomize lights every 1000ms
         nIntervId = setInterval(randomizeLights, 1000);
-        // after 15 seconds, cancel the celebration! 
-        setTimeout(function () { clearInterval(nIntervId) }, 16000);
+        // after 16 seconds, cancel the celebration! 
+        setTimeout(function () {
+          clearInterval(nIntervId);
+          if (CELEBRATING_URL != "") xapi.Command.UserInterface.WebView.Clear();
+          isCelebrating = false;
+        },
+          16000);
 
       }
       break;
@@ -239,7 +251,6 @@ async function handleWidgetActions(event) {
         red = parseInt(event.Value);
         console.log("Red set to: " + red);
         await xapi.Command.UserInterface.Extensions.Widget.SetValue({ Value: red.toString(), WidgetId: 'widget_red_value' });
-        //await setColor(red, green, blue, white);
       }
       break;
     case 'widget_green_slider':
@@ -247,7 +258,6 @@ async function handleWidgetActions(event) {
         green = parseInt(event.Value);
         console.log("Green set to: " + green);
         await xapi.Command.UserInterface.Extensions.Widget.SetValue({ Value: green.toString(), WidgetId: 'widget_green_value' });
-        //await setColor(red, green, blue, white);
       }
       break;
     case 'widget_blue_slider':
@@ -255,7 +265,6 @@ async function handleWidgetActions(event) {
         blue = parseInt(event.Value);
         console.log("Blue set to: " + blue);
         await xapi.Command.UserInterface.Extensions.Widget.SetValue({ Value: blue.toString(), WidgetId: 'widget_blue_value' });
-        //await setColor(red, green, blue, white);
       }
       break;
     case 'widget_white_slider':
@@ -263,7 +272,6 @@ async function handleWidgetActions(event) {
         white = parseInt(event.Value);
         console.log("White set to: " + white);
         await xapi.Command.UserInterface.Extensions.Widget.SetValue({ Value: white.toString(), WidgetId: 'widget_white_value' });
-        //await setColor(red, green, blue, white);
       }
       break;
     case 'widget_toggle_on_off':
