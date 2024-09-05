@@ -2,19 +2,27 @@
 
 This is a collection of room automation Webex Devices macros to be used in demos at Cisco Connect Cancun in September of 2024
 
+![/IMAGES/icons.png](/IMAGES/icons.png)
+
 ### AC Simulator and fan control (ac-simulator.js)
 
 This macro turns on a fan once a threshold temperature is hit and turns it off once the temperature comes back down. We will use the temp sensor in the Navigator to determine if on or off and will provide an on-screen control to allow users to manually turn on the fan or automatically, for which they have to select the temperature (in Celsius).  
  The actual physical fan in the demonstration is controlled by just turning on or off a smart switch where it is connected. The smart switch is controlled via HTTP commands on the local network that the macro issues.
+
+![/IMAGES/fan.png](/IMAGES/fan.png)
 
 ### Light control (light-control.js)
 
 Provides a UI top level buttons to turn lights on/off and change their color or white intensity. Also provides a top level button called "Celebrate" that does some multi-bulb light flashing pattern for a configurable number of seconds with an option to play a video on the main screen during that time.  
 Lights are controlled via HTTP commands on the local network using the same protocol as for the smart swich since we are using devices from the same brand and family of home automation products these first two.
 
+![/IMAGES/lights.png](/IMAGES/lights.png)
+
 ### HDMI Matrix switcher controller (matrix_switch_serial.js)
 
 Provides a top level custom panel named "HDMI Input" that allows you to select between the 4 different HDMI inputs to select which one to use to show content on the codec EQ. This is controlled via SerialOut commands over the USB-A ports that will have an RS232 adapter cable that plugs into the RS232 DB9 female connector on the matrix switcher.
+
+![/IMAGES/HDMI_Input.png](/IMAGES/HDMI_Input.png)
 
 ### Report Issue (report-issue.js)
 
@@ -22,6 +30,8 @@ Provide a way for end users in the devices to report issues with the room or roo
 Mailer1: will be notified when "Technical Issue with Incoming Audio/Video" Issues are submitted Mailer2: will be notified when "Can't connect to my meeting" Issues are submitted Mailer3: will be notified when "Request for a technician" Issues are submitted
 
 The report issue portion of this repository was based off of the GVE DevNet report issue macro: https://github.com/gve-sw/gve_devnet_report_issue_macro
+
+![/IMAGES/report-issue-gif.gif](/IMAGES/report-issue-gif.gif)
 
 ## Contacts
 
@@ -67,16 +77,6 @@ Configure the Report Issue Macro by changing the Issue names (ISSUE_NAME_1,ISSUE
 Enable all the Macros uploaded except GMM_LIB.js. That one is just for use by the report-issue.js macro which includes it as a library.
 
 More details on how to install Macros for the [Board, Desk, and Room Series](https://help.webex.com/en-us/article/gj962f/Configure-macros-and-user-interface-extensions-for-Board,-Desk,-and-Room-Series)
-
-## Usage
-
-# Screenshots
-
-![/IMAGES/icons.png](/IMAGES/icons.png)
-![/IMAGES/fan.png](/IMAGES/fan.png)
-![/IMAGES/lights.png](/IMAGES/lights.png)
-![/IMAGES/HDMI_Input.png](/IMAGES/HDMI_Input.png)
-![/IMAGES/report-issue-gif.gif](/IMAGES/report-issue-gif.gif)
 
 ### LICENSE
 
