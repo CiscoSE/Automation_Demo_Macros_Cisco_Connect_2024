@@ -24,9 +24,9 @@ or implied.
  * 
  * 
  * Released: July 17, 2024
- * Updated: June 17, 2024
+ * Updated: September 5, 2024
  *
- * Version: 1.0.1
+ * Version: 1.0.2
 */
 
 import xapi from 'xapi';
@@ -34,7 +34,10 @@ import xapi from 'xapi';
 const ligthIPs = ['10.0.1.111', '10.0.1.112', '10.0.1.113', '10.0.1.114']; // Set the IP address of the lights
 const LIGHT_USERNAME = 'admin'; // Set the username for the smart switch, leave blank if not needed
 const LIGHT_PASSWORD = 'password'; // Set the password for the smart switch
-const CELEBRATING_URL = 'https://youtu.be/3GwjfUFyY6M?si=Kk5dSEaH4m7iLuNv'
+// Leave CELEBRATING_URL blank if no video needs to be shown on the main screen during the celebration.
+// Otherwise, put the URL of a video such as 'https://youtu.be/3GwjfUFyY6M?si=Kk5dSEaH4m7iLuNv' but insure it plays automatically.
+const CELEBRATING_URL = '';
+const CELEBRATING_DURATION = 16000; // Set the time in milliseconds for the celebration to last
 
 
 let nIntervId;
@@ -242,7 +245,7 @@ async function handleWidgetActions(event) {
           if (CELEBRATING_URL != "") xapi.Command.UserInterface.WebView.Clear();
           isCelebrating = false;
         },
-          16000);
+          CELEBRATING_DURATION);
 
       }
       break;

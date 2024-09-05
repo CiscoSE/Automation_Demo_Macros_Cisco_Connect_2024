@@ -9,7 +9,7 @@ This macro turns on a fan once a threshold temperature is hit and turns it off o
 
 ### Light control (light-control.js)
 
-Provides a UI top level buttons to turn lights on/off or dim them at a specific setting. Also provide a top level button called "Celebrate" that does some multi-bulb light flashing patter for 15 seconds and goes back to the normal setting. There is also a "color chooser" button that brings up another panel with a individual color sliders for all 4 bulbs so you can set their color or just set to white.
+Provides a UI top level buttons to turn lights on/off and change their color or white intensity. Also provides a top level button called "Celebrate" that does some multi-bulb light flashing pattern for a configurable number of seconds with an option to play a video on the main screen during that time.  
 Lights are controlled via HTTP commands on the local network using the same protocol as for the smart swich since we are using devices from the same brand and family of home automation products these first two.
 
 ### HDMI Matrix switcher controller (matrix_switch_serial.js)
