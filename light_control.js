@@ -26,7 +26,7 @@ or implied.
  * Released: July 17, 2024
  * Updated: September 5, 2024
  *
- * Version: 1.0.2
+ * Version: 1.0.3
 */
 
 import xapi from 'xapi';
@@ -35,17 +35,20 @@ const ligthIPs = ['10.0.1.111', '10.0.1.112', '10.0.1.113', '10.0.1.114']; // Se
 const LIGHT_USERNAME = 'admin'; // Set the username for the smart switch, leave blank if not needed
 const LIGHT_PASSWORD = 'password'; // Set the password for the smart switch
 // Leave CELEBRATING_URL blank if no video needs to be shown on the main screen during the celebration.
-// Otherwise, put the URL of a video such as 'https://youtu.be/3GwjfUFyY6M?si=Kk5dSEaH4m7iLuNv' but insure it plays automatically.
-const CELEBRATING_URL = '';
-const CELEBRATING_DURATION = 16000; // Set the time in milliseconds for the celebration to last
+// Otherwise, put the URL of a video such as 'https://www.youtube.com/watch?v=VaOGlkkL0j4' but insure it plays automatically.
+let CELEBRATING_URL = ''; // Set the URL of the video to be shown during the celebration
+const CELEBRATING_DURATION = 30000; // Set the time in milliseconds for the celebration to last
 
+
+let IntervId;
+let cancelTimer;
 
 let nIntervId;
 
 let red = 255;
 let green = 255;
 let blue = 255;
-let white = 255;
+let white = 0;
 let isCelebrating = false
 
 
@@ -58,9 +61,10 @@ let custom_panel = `<Extensions>
   <Panel>
     <Order>3</Order>
     <PanelId>panel_lights</PanelId>
+    <Origin>local</Origin>
     <Location>HomeScreen</Location>
     <Icon>Lightbulb</Icon>
-    <Name>Ligths</Name>
+    <Name>Lights</Name>
     <ActivityType>Custom</ActivityType>
     <Page>
       <Name>Lights</Name>
@@ -137,23 +141,7 @@ let custom_panel = `<Extensions>
           <Type>Text</Type>
           <Options>size=1;fontSize=normal;align=center</Options>
         </Widget>
-        <Widget>
-          <WidgetId>widget_33</WidgetId>
-          <Name>White</Name>
-          <Type>Text</Type>
-          <Options>size=1;fontSize=normal;align=center</Options>
-        </Widget>
-        <Widget>
-          <WidgetId>widget_white_slider</WidgetId>
-          <Type>Slider</Type>
-          <Options>size=2</Options>
-        </Widget>
-        <Widget>
-          <WidgetId>widget_white_value</WidgetId>
-          <Name>0</Name>
-          <Type>Text</Type>
-          <Options>size=1;fontSize=normal;align=center</Options>
-        </Widget>
+
       </Row>
       <Row>
         <Name>Celebrate 🎉</Name>
@@ -161,7 +149,13 @@ let custom_panel = `<Extensions>
           <WidgetId>widget_button_celebrate</WidgetId>
           <Name>Go!</Name>
           <Type>Button</Type>
-          <Options>size=4</Options>
+          <Options>size=3</Options>
+        </Widget>
+        <Widget>
+          <WidgetId>widget_button_cancel</WidgetId>
+          <Name>Cancel</Name>
+          <Type>Button</Type>
+          <Options>size=1</Options>
         </Widget>
       </Row>
       <Options/>
@@ -176,26 +170,51 @@ function delay(ms) {
 
 
 async function sendHTTPGet(url) {
-  await xapi.Command.HttpClient.Get({ AllowInsecureHTTPS: 'True', Url: url })
-    .then((response) => { if (response.StatusCode === "200") { console.debug("Successfully sent command via get: " + url) } });
+  try {
+    await xapi.Command.HttpClient.Get({ AllowInsecureHTTPS: 'True', Url: url })
+      .then((response) => { if (response.StatusCode === "200") { console.debug("Successfully sent command via get: " + url) } });
+  }
+  catch (e) {
+    console.log("http GET error... continuing")
+    console.debug(e)
+  }
 }
 
 
 // randomizeLights function sets each light to a random color and intensity
 async function randomizeLights() {
+  // modified to just always just show green, white and red representing the mexican flag since 
+  // long response times from the lights were causing errors in the macro due to too many http connections
   console.debug("setting each bulb to a different color an intensity to celebrate...");
-  for (let i = 0; i < ligthIPs.length; i++) {
-    let url = 'http://' + get_auth + ligthIPs[i] + '/color/0?turn=on&red=' + Math.floor(Math.random() * 255) + '&green=' + Math.floor(Math.random() * 255) + '&blue=' + Math.floor(Math.random() * 255) + '&white=0';
-    await sendHTTPGet(url)
-    await delay(250);
-  }
+  let url = 'http://' + get_auth + ligthIPs[0] + '/color/0?turn=on&red=' + 0 + '&green=' + 255 + '&blue=' + 0 + '&white=0';
+  await sendHTTPGet(url)
+  await delay(200);
+
+  url = 'http://' + get_auth + ligthIPs[1] + '/color/0?turn=on&red=' + 255 + '&green=' + 255 + '&blue=' + 255 + '&white=0';
+  await sendHTTPGet(url)
+  await delay(200);
+
+  url = 'http://' + get_auth + ligthIPs[2] + '/color/0?turn=on&red=' + 255 + '&green=' + 255 + '&blue=' + 255 + '&white=0';
+  await sendHTTPGet(url)
+  await delay(200);
+
+  url = 'http://' + get_auth + ligthIPs[3] + '/color/0?turn=on&red=' + 255 + '&green=' + 0 + '&blue=' + 0 + '&white=0';
+  await sendHTTPGet(url)
+  await delay(200);
+
+  // original code to randomize all lights
+  // for (let i = 0; i < ligthIPs.length; i++) {
+  //   let url = 'http://' + get_auth + ligthIPs[i] + '/color/0?turn=on&red=' + Math.floor(Math.random() * 255) + '&green=' + Math.floor(Math.random() * 255) + '&blue=' + Math.floor(Math.random() * 255) + '&white=0';
+  //    await sendHTTPGet(url)
+  //    await delay(200);
+  // }
 }
 
 async function lightSwitch(on_off_setting) {
   console.log("Turning all lights " + on_off_setting + "...");
   for (let i = 0; i < ligthIPs.length; i++) {
     let url = 'http://' + get_auth + ligthIPs[i] + '/color/0?turn=' + on_off_setting;
-    await sendHTTPGet(url)
+    if (!isCelebrating) await sendHTTPGet(url)
   }
 
 }
@@ -220,7 +239,7 @@ async function setColor(red, green, blue, white) {
   console.log("Setting all lights to color " + red + ", " + green + ", " + blue + ", " + white + "...");
   for (let i = 0; i < ligthIPs.length; i++) {
     let url = 'http://' + get_auth + ligthIPs[i] + '/color/0?red=' + red + '&green=' + green + '&blue=' + blue + '&white=' + white;
-    await sendHTTPGet(url)
+    if (!isCelebrating) await sendHTTPGet(url)
     await delay(200)
   }
 }
@@ -237,16 +256,29 @@ async function handleWidgetActions(event) {
           await xapi.Command.UserInterface.WebView.Display({ Url: CELEBRATING_URL });
         // set initial randomization of lights
         await randomizeLights()
-        // radomize lights every 1000ms
-        nIntervId = setInterval(randomizeLights, 1000);
-        // after 16 seconds, cancel the celebration! 
-        setTimeout(function () {
+        // radomize lights every 5000ms since latest version just shows the mexican flag colors always
+        // set back to somthing smaller like 500ms if you want to randomize the lights
+        nIntervId = setInterval(randomizeLights, 5000);
+        // after CELEBRATING_DURATION ms, cancel the celebration! 
+        cancelTimer = setTimeout(function () {
           clearInterval(nIntervId);
           if (CELEBRATING_URL != "") xapi.Command.UserInterface.WebView.Clear();
           isCelebrating = false;
         },
           CELEBRATING_DURATION);
 
+      }
+      break;
+    case 'widget_button_cancel':
+      if (event.Type == 'released') {
+        console.log("Cancel celebration!!")
+        if (cancelTimer)
+          clearTimeout(cancelTimer);
+        if (isCelebrating) {
+          clearInterval(nIntervId);
+          if (CELEBRATING_URL != "") xapi.Command.UserInterface.WebView.Clear();
+          isCelebrating = false;
+        }
       }
       break;
     case 'widget_red_slider':
@@ -307,8 +339,6 @@ async function main() {
   await xapi.Command.UserInterface.Extensions.Widget.SetValue({ WidgetId: 'widget_green_value', Value: green.toString() });
   await xapi.Command.UserInterface.Extensions.Widget.SetValue({ WidgetId: 'widget_blue_slider', Value: blue });
   await xapi.Command.UserInterface.Extensions.Widget.SetValue({ WidgetId: 'widget_blue_value', Value: blue.toString() });
-  await xapi.Command.UserInterface.Extensions.Widget.SetValue({ WidgetId: 'widget_white_slider', Value: white });
-  await xapi.Command.UserInterface.Extensions.Widget.SetValue({ WidgetId: 'widget_white_value', Value: white.toString() });
 
   // register the custom panel events
   xapi.Event.UserInterface.Extensions.Widget.Action.on(event => handleWidgetActions(event));
